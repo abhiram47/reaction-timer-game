@@ -88,20 +88,33 @@ int main() {
                 break;
 
             case STATE_READY:
+                printf("\n");
                 printf("Get ready...\n");
                 Settings.current_state = STATE_WAITING;
                 break;
 
             case STATE_WAITING:
                 int random_delay = rand() % (Settings.delay_max - Settings.delay_min + 1) + Settings.delay_min;
-                printf("Waiting for random delay of %d ms...\n", random_delay);
+                printf("Wait for the FIRE signal...\n");
                 Sleep(random_delay);
-                Settings.current_state = STATE_FIRED;
+                
+                
+                if(kbhit()) {    // Check if the player pressed a key too early
+                    getch();    // Clearing the alredady pressed key
+                    printf("\nNo cheating! You pressed too early!\n");
+                    printf("\n");
+                    printf("Press any key to return to menu...\n");
+                    getch();
+                    Settings.current_state = STATE_MENU;
+                } else {
+                    Settings.current_state = STATE_FIRED;
+                }
                 printf("\n");
                 break;
 
             case STATE_FIRED:
                 printf("[FIRE!]\n");
+                printf("\n");
                 printf("Press any key to stop the timer...\n");
                 double startTime = getTimeInMS();
                 getch();
@@ -123,10 +136,13 @@ int main() {
                 break;
             case STATE_RESULT:
                 printf("Displaying stats...\n");
+                printf("---------------\n");
+                printf("\n");
                 printf("Best Time: %.2f ms\n", Settings.stats.best_time);
                 printf("Worst Time: %.2f ms\n", Settings.stats.worst_time);
                 printf("Average Time: %.2f ms\n", Settings.stats.average_time);
                 printf("Total Games Played: %d\n", Settings.stats.games_played);
+                printf("\n");
                 printf("Returning to menu...\n");
                 printf("...\n");
                 printf("press any key to continue...\n");
@@ -138,11 +154,12 @@ int main() {
             default:
                 printf("Unknown state!\n");
                 printf("Returning to menu...\n");
+                printf("\n");
                 Settings.current_state = STATE_MENU;
                 break;
         }
     }
-
+    printf("\n");
     printf("Exiting the game. Goodbye!\n");
     printf("\n");
 

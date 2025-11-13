@@ -1,0 +1,44 @@
+# Compiled binaries and object files
+*.exe
+*.out
+*.o
+*.obj
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
+*.pdb
+
+# Build / output directories
+/build/
+/bin/
+/dist/
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Editor / IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln
+*.vcxproj*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# User data (do not track personal save files)
+player_data.dat
+
+# Ignore common test/executable names used while developing
+main.exe
+a.out
+
+# If you add generated files or folders later, list them here
+# e.g. /generated/

@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<time.h>
 #include<conio.h>
+#include<stdbool.h>
 
 #ifdef _WIN32
     #include<Windows.h>  
@@ -35,11 +36,11 @@ typedef enum {
 } GameState;
 
 typedef struct {
-    double best_time;
-    double worst_time;
-    double average_time;
-    double total_time;
-    int games_played;
+    double best_time;   // in milliseconds
+    double worst_time;  // in milliseconds
+    double average_time;    // in milliseconds
+    double total_time;  // in milliseconds
+    int games_played;   
 }PlayerStats;
 
 typedef struct {
@@ -48,6 +49,23 @@ typedef struct {
     PlayerStats stats;
     GameState current_state;
 } GameSettings;
+
+  // Initialize Game - Sets all defaults
+GameSettings initialize_game() {
+    GameSettings g;
+    g.delay_min = 3000;
+    g.delay_max = 7000;
+    
+    // Initialize stats to safe defaults
+    g.stats.best_time = 99999.0; // High value so first game beats it
+    g.stats.worst_time = 0.0;
+    g.stats.average_time = 0.0;
+    g.stats.total_time = 0.0;
+    g.stats.games_played = 0;
+    
+    g.current_state = STATE_MENU;
+    return g;
+}
 
 // Function to save game settings
 void save_settings(PlayerStats *stats){
@@ -67,25 +85,27 @@ void save_settings(PlayerStats *stats){
 }
 
 // Function to load game settings
-void load_settings(PlayerStats *stats){
+bool load_settings(PlayerStats *stats){
     FILE *file;
     file = fopen("player_data.dat", "rb");
 
     if(file == NULL){
-        printf("Error NO Saved File found... \n");
-        return;
+        printf("No saved file found. Starting with defaults.\n");
+        return false; // Signal to caller: read failed
     }
     if(fread(stats, sizeof(PlayerStats), 1, file) != 1) {
         printf("Error reading from file\n");
-    }else {
-        printf("Game loaded successfully \n");
+        fclose(file);
+        return false;  // Signal to caller: read failed
     }
+    printf("Game loaded successfully \n");
     fclose(file);
+    return true;
 }
 
 void handle_menu_settings(GameSettings *settings) {
     // Implement menu handling logic here
-    printf("You are in the menu.\n");
+                printf("You are in the menu.\n");
                 printf("Select an option to proceed...\n\n");
                 printf("options...\n");
                 printf("\n");
@@ -101,7 +121,9 @@ void handle_menu_settings(GameSettings *settings) {
                 } else if (choice == '3') {
                     settings->current_state = STATE_EXIT;
                 } else {
-                    printf("Invalid option! Returning to menu...\n");
+                    printf("Invalid option! Please press 1, 2, or 3.\n");
+                    printf("Press any key to try again...\n");
+                    getch();
                     settings->current_state = STATE_MENU;
                 }
 }
@@ -142,10 +164,21 @@ void handle_fired_settings(GameSettings *settings) {
     getch();
     double endTime = getTimeInMS();
     double reactionTime = endTime - startTime;
+    if (reactionTime < 0 || reactionTime > 10000) {
+        printf("Error: Timer glitch or inactivity (%.2f ms). Result discarded.\n", reactionTime);
+        printf("Press any key to return to menu...\n");
+        getch();
+        settings->current_state = STATE_MENU;
+        return;
+    }
     printf("Your reaction time is: %.2f ms\n", reactionTime);
     settings->stats.games_played++;
     settings->stats.total_time += (reactionTime);
-    settings->stats.average_time = settings->stats.total_time / settings->stats.games_played;
+    if (settings->stats.games_played > 0) {
+        settings->stats.average_time = settings->stats.total_time / settings->stats.games_played;
+    } else {
+        settings->stats.average_time = 0.0;
+    }
     if (reactionTime < settings->stats.best_time) {
         settings->stats.best_time = reactionTime;
     }
@@ -178,17 +211,12 @@ void handle_result_settings(GameSettings *settings) {
 
 int main() {
     srand(time(NULL));   
-    GameSettings Settings;
-    Settings.delay_min = 3000;
-    Settings.delay_max = 7000;
-    Settings.stats.best_time = 9999.0;
-    Settings.stats.worst_time = 0.0;
-    Settings.stats.average_time = 0.0;
-    Settings.stats.total_time = 0.0;
-    Settings.stats.games_played = 0;
-    Settings.current_state = STATE_MENU;
+    GameSettings Settings = initialize_game();
 
-    load_settings(&Settings.stats);
+    if (!load_settings(&Settings.stats)) {
+    printf("Starting fresh with no previous stats.\n");
+    }
+
     Settings.current_state = STATE_MENU;
     
     while (Settings.current_state != STATE_EXIT) {
